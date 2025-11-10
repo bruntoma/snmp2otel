@@ -2,10 +2,53 @@
 #include <vector>
 #include <string>
 
+#include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-includes.h>
+#include <atomic>
+#include <csignal>
+#include <thread>
+#include <chrono>
+#include "SnmpClient.hpp"
+#include "SnmpResponseToOtlpConverter.hpp"
+#include "HttpOtelClient.hpp"
+
+std::atomic<bool> running{true};
+void handle_signal(int) { running = false; }
+
+
+
 int main() {
+    std::signal(SIGINT, handle_signal);
+    std::signal(SIGTERM, handle_signal);
+
     std::string target = "10.0.1.138";
     std::string community = "public";
     std::vector<std::string> oids = {"1.3.6.1.2.1.1.1.0", "1.3.6.1.2.1.1.5.0"};
-    
+    int interval = 5;
+
+    SnmpClient client(target, community);
+    SnmpResponseToOtlpConverter converter;
+    HttpOtelClient otelClient("http://localhost:4318/v1/metrics");
+
+    int counter = 0;
+    while (running) { 
+
+        std::cout << "Loop #" << counter << "\n";
+        netsnmp_pdu * responsePdu = client.snmpGet(oids);
+        std::string otlpJson = converter.toOtlpJson(responsePdu);
+        bool success = otelClient.sendMetrics(otlpJson);
+        if (success) {
+            std::cout << "Metrics sent successfully.\n";
+        } else {
+            std::cout << "Failed to send metrics.\n";
+        }
+
+
+        if (running)
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        counter++;
+    }
+
+    std::cout << "Main loop exited cleanly.\n";
     return 0;
 }
