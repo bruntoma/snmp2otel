@@ -1,0 +1,27 @@
+{
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "files.associations": {
+            "*.h": "cpp",
+            "*.cpp": "cpp"
+        },
+        "C_Cpp.default.configurationProvider": "ms-vscode.makefile-tools",
+        "makefile.launchConfigurations": [
+            {
+                "cwd": "/home/tom/school/isa2",
+                "binaryPath": "/home/tom/school/isa2/bin/program",
+                "binaryArgs": []
+            }
+        ]
+    },
+    "extensions": {
+        "recommendations": [
+            "ms-vscode.cpptools-extension-pack",
+            "ms-vscode.makefile-tools"
+        ]
+    }
+}
