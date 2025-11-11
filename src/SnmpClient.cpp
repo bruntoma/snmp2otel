@@ -2,10 +2,10 @@
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 
-SnmpClient::SnmpClient(const std::string& target, const std::string& community) : target(target), community(community) {
+SnmpClient::SnmpClient(const std::string& target, const std::string& community, int port) : target(target), community(community), port(port) {
     init_snmp("snmpapp");
     snmp_sess_init(&session);
-    session.peername = strdup(target.c_str());
+    session.peername = strdup((target + ":" + std::to_string(port)).c_str());
     session.version = SNMP_VERSION_2c;
     session.community = (u_char*)strdup(community.c_str());
     session.community_len = community.length();

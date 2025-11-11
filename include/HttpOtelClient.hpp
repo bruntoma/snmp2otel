@@ -9,7 +9,7 @@
 class HttpOtelClient {
 public:
     HttpOtelClient(const std::string& endpointUrl);
-    bool sendMetrics(const std::string& otlpJson);
+    bool sendMetrics(const std::string& otlpJson, int timeout);
 private:
     std::string endpointUrl;
 };

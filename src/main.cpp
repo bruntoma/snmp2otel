@@ -12,6 +12,7 @@
 #include "SnmpResponseToOtlpConverter.hpp"
 #include "HttpOtelClient.hpp"
 #include "Mapping.hpp"
+#include "ArgumentParser.hpp"
 
 std::atomic<bool> running{true};
 void handle_signal(int) { running = false; }
@@ -20,8 +21,22 @@ void handle_signal(int) { running = false; }
 
 int main(int argc, char* argv[]) {
 
-    std::string oidFile = argv[1];
-    std::string mappingFile = argv[2];
+    ArgumentParser argParser;
+    argParser.parse(argc, argv);
+
+    std::string target = argParser.target;
+    std::string community = argParser.community;
+    std::string oidFile = argParser.oidFile;
+    std::string mappingFile = argParser.mappingFile;
+    std::string otelEndpoint = argParser.otelEndpoint;
+    int port = argParser.port;
+    int timeout = argParser.timeout;
+    int interval = argParser.interval;
+    int retries = argParser.retries;
+    bool verbose = argParser.verbose;
+
+
+    //Parse files
     std::vector<std::string> oids = loadOidList(oidFile);
     std::cout << "LOADED OIDS" << std::endl;
     for (std::string oid : oids)
@@ -45,14 +60,9 @@ int main(int argc, char* argv[]) {
     std::signal(SIGINT, handle_signal);
     std::signal(SIGTERM, handle_signal);
 
-    std::string target = "10.0.1.138";
-    std::string community = "public";
-    //std::vector<std::string> oids = {"1.3.6.1.2.1.1.1.0", "1.3.6.1.2.1.1.5.0", "1.3.6.1.2.1.1.3.0", "1.3.6.1.4.1.2021.11.9.0"};
-    int interval = 5;
-
-    SnmpClient client(target, community);
+    SnmpClient client(target, community, port);
     SnmpResponseToOtlpConverter converter;
-    HttpOtelClient otelClient("http://172.26.16.1:4318/v1/metrics");
+    HttpOtelClient otelClient(otelEndpoint);
 
     int counter = 0;
     while (running) { 
@@ -60,16 +70,25 @@ int main(int argc, char* argv[]) {
         std::cout << "\nLoop #" << counter << "\n";
         netsnmp_pdu * responsePdu = client.snmpGet(oids);
         std::string otlpJson = converter.toOtlpJson(responsePdu, target, mappings);
-        bool success = otelClient.sendMetrics(otlpJson);
-        if (success) {
-            std::cout << "Metrics sent successfully.\n";
-        } else {
-            std::cout << "Failed to send metrics.\n";
+
+        int timeoutRetryCounter = 1;
+        bool success = false;
+        do { 
+            success = otelClient.sendMetrics(otlpJson, timeout);
+        
+            if (success) {
+                std::cout << "Metrics sent successfully.\n";
+                timeoutRetryCounter = 1;
+            } else {
+                std::cout << "Failed to send metrics. Retry #" << timeoutRetryCounter << std::endl << std::endl;
+                timeoutRetryCounter++;
+            }
         }
+        while(!success && timeoutRetryCounter <= retries && running);
 
 
         if (running)
-            std::this_thread::sleep_for(std::chrono::seconds(1));
+            std::this_thread::sleep_for(std::chrono::seconds(interval));
         counter++;
 
         std::cout << "____________________________________________" << std::endl;
