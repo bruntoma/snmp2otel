@@ -1,6 +1,9 @@
 #include "HttpOtelClient.hpp"
 #include <curl/curl.h>
 #include <iostream>
+#include "Config.hpp"
+
+
 HttpOtelClient::HttpOtelClient(const std::string& endpointUrl)
     : endpointUrl(endpointUrl) {}
 
@@ -15,7 +18,7 @@ size_t write_data(void *buffer, size_t size, size_t nmemb, void *userp)
 bool HttpOtelClient::sendMetrics(const std::string& otlpJson, int timeout) {
     CURL* curl = curl_easy_init();
     if (!curl) {
-        std::cerr << "Failed to initialize curl\n";
+        logError("Failed to initialize curl\n");
         return false;
     }
     struct curl_slist* headers = nullptr;
@@ -31,18 +34,15 @@ bool HttpOtelClient::sendMetrics(const std::string& otlpJson, int timeout) {
 
     if (res == CURLE_OPERATION_TIMEOUTED)
     {
-        std::cerr << "Error: Timeout when exporting metrics to OTEL endpoint." << std::endl;
+        logError("Timeout when exporting metrics to OTEL endpoint.");
     }
 
     if (res != CURLE_OK) {
-        std::cerr << "curl easy perform error" << std::endl;
+        logError("curl easy perform error");
         curl_slist_free_all(headers);
         curl_easy_cleanup(curl);
         return false;
     }
-
-
-
 
     curl_slist_free_all(headers);
     curl_easy_cleanup(curl);

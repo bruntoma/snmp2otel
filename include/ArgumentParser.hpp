@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <cstdlib>
 #include <stdexcept>
+#include "Config.hpp"
 
 
 class ArgumentParser {
@@ -55,38 +56,38 @@ public:
                         port = std::stoi(optarg);
                         if (port <= 0 || port > 65535) throw std::runtime_error("invalid port");
                         break;
-                    case 'v': verbose = true; break;
+                    case 'v': 
+                        verbose = true; 
+                        break;
                     case '?':
                         if (optopt) {
-                            std::cerr << "Error: Argument -" << (char)optopt << std::endl;
+                            logError("Argument -" + std::to_string((char)optopt));
                         } else {
-                            std::cerr << "Error. Unknown argument" << std::endl;
+                            logError("Unknown argument");
                         }
                         return false;
                     default: return false;
                 }
             } catch (const std::exception& e) {
-                std::cerr << "Error: Invalid argument -" << (char)opt << ". " 
-                          << e.what() << std::endl;
+                logError("Invalid argument -" + std::to_string((char)opt) + ". "  + e.what());
                 return false;
             }
         }
         
         //required params
         if (target.empty()) {
-            std::cerr << "Error: missing -t (target)." << std::endl;
+            logError("missing -t (target).");
             return false;
         }
         if (oidFile.empty()) {
-            std::cerr << "Error: mising -o (oids_file)." << std::endl;
+            logError("mising -o (oids_file).");
             return false;
         }
 
         if (otelEndpoint.empty()) {
-            std::cerr << "Error: missing -e (OTEL endpoint)." << std::endl;
+            logError("missing -e (OTEL endpoint).");
             return false;
         }
-
         return true;
     }
 

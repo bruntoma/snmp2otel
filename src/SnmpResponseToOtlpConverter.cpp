@@ -8,6 +8,7 @@
 #include <iostream>
 #include <cctype>
 #include "../include/json.hpp"
+#include "Config.hpp"
 
 #include "SnmpResponseToOtlpConverter.hpp"
 
@@ -42,7 +43,7 @@ bool str_to_double(std::string str, double& result)
         result = std::stod(str);
         return true;        
     } catch (const std::invalid_argument& e) {
-        std::cerr << "Conversion error '" << str << "' is not a number string" << std::endl;
+        logError("Conversion error '" + str + "' is not a number string");
         return false;
     }
 }
@@ -90,7 +91,7 @@ std::vector<MetricInfo> extractSnmpData(netsnmp_pdu* responsePdu)
 
             // other types not supported
             default:
-                std::cerr << "OID " + oid_str + ": Unsupported type: " + snmp_type_to_string(vars->type) << std::endl;
+                logError("OID " + oid_str + ": Unsupported type: " + snmp_type_to_string(vars->type));
                 err = true;
                 break;
         }
@@ -139,23 +140,23 @@ std::string SnmpResponseToOtlpConverter::toOtlpJson(netsnmp_pdu* responsePdu, co
 
     json& metrics_array = root_json["resourceMetrics"][0]["scopeMetrics"][0]["metrics"]; // ref to the array with metrics
     for (const auto& info : metrics) {
-        std::cout << "\nResolving metric. OID: " << info.oid << std::endl;
+        log("\nResolving metric. OID: " + info.oid);
         std::string metric_name;
         std::string metric_unit;
 
         if (auto it = mappings.find(info.oid); it != mappings.end()) {
-            std::cout << "[I] found mapping for OID " << info.oid << ", name: " << it -> second.name << std::endl;
+            log("[I] found mapping for OID " + info.oid + ", name: " + it -> second.name);
             metric_name = it->second.name;
             metric_unit = it->second.unit;
         } else {
-            std::cout << "[X] No mapping found for OID: " << info.oid << std::endl;
+            log("No mapping found for OID: " + info.oid);
             metric_name = DEFAULT_METRIC_NAME_PREFIX + info.oid;
             metric_unit = "";
         }
 
         std::replace(metric_name.begin(), metric_name.end(), '.', '_');
 
-        std::cout << "[I] Sending metric with name: " + metric_name << std::endl;
+        log("Sending metric with name: " + metric_name);
 
         json metric_json = {
             {"name", metric_name},

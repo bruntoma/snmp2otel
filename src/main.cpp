@@ -13,6 +13,7 @@
 #include "HttpOtelClient.hpp"
 #include "Mapping.hpp"
 #include "ArgumentParser.hpp"
+#include "Config.hpp"
 
 std::atomic<bool> running{true};
 void handle_signal(int) { running = false; }
@@ -34,26 +35,27 @@ int main(int argc, char* argv[]) {
     int interval = argParser.interval;
     int retries = argParser.retries;
     bool verbose = argParser.verbose;
-
+    g_verbose = verbose;
 
     //Parse files
     std::vector<std::string> oids = loadOidList(oidFile);
-    std::cout << "LOADED OIDS" << std::endl;
+    log("LOADED OIDS");
+
     for (std::string oid : oids)
     {
-        std::cout << oid << std::endl;
+        log(oid);
     }
-    std::cout << "_____________________________________________" << std::endl;
+    log("_____________________________________________");
     auto mappings = mappingFile.empty() ? std::unordered_map<std::string, OidMetricMapping>() 
                                        : loadMapping(mappingFile);
 
-    std::cout << "MAPPINGS: " << std::endl;
+    log("MAPPINGS: ");
     for (auto mapping : mappings)
     {
-        std::cout << mapping.first << " : " << mapping.second.name << std::endl;
+        log(mapping.first + " : " + mapping.second.name);
     }
 
-    std::cout << "____________________________________________" << std::endl;
+    log("____________________________________________");
 
 
 
@@ -67,7 +69,7 @@ int main(int argc, char* argv[]) {
     int counter = 0;
     while (running) { 
 
-        std::cout << "\nLoop #" << counter << "\n";
+        log("\nLoop #" + std::to_string(counter));
         netsnmp_pdu * responsePdu = client.snmpGet(oids);
         std::string otlpJson = converter.toOtlpJson(responsePdu, target, mappings);
 
@@ -77,10 +79,10 @@ int main(int argc, char* argv[]) {
             success = otelClient.sendMetrics(otlpJson, timeout);
         
             if (success) {
-                std::cout << "Metrics sent successfully.\n";
+                log("Metrics sent successfully.");
                 timeoutRetryCounter = 1;
             } else {
-                std::cout << "Failed to send metrics. Retry #" << timeoutRetryCounter << std::endl << std::endl;
+                logError("Failed to send metrics. Retry #" + std::to_string(timeoutRetryCounter) + "\n");
                 timeoutRetryCounter++;
             }
         }
@@ -91,9 +93,9 @@ int main(int argc, char* argv[]) {
             std::this_thread::sleep_for(std::chrono::seconds(interval));
         counter++;
 
-        std::cout << "____________________________________________" << std::endl;
+        log("____________________________________________");
     }
 
-    std::cout << "Main loop exited cleanly.\n";
+    log("Main loop exited cleanly.");
     return 0;
 }
