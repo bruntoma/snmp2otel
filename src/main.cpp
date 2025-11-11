@@ -23,7 +23,7 @@ int main() {
 
     std::string target = "10.0.1.138";
     std::string community = "public";
-    std::vector<std::string> oids = {"1.3.6.1.2.1.1.1.0", "1.3.6.1.2.1.1.5.0"};
+    std::vector<std::string> oids = {"1.3.6.1.2.1.1.1.0", "1.3.6.1.2.1.1.5.0", "1.3.6.1.2.1.1.3.0", "1.3.6.1.4.1.2021.11.9.0"};
     int interval = 5;
 
     SnmpClient client(target, community);
