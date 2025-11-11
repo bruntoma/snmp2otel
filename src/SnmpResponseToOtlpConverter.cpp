@@ -71,8 +71,10 @@ std::vector<MetricInfo> extractSnmpData(netsnmp_pdu* responsePdu)
             case ASN_INTEGER:
             case ASN_COUNTER:
             case ASN_GAUGE:
-            case ASN_TIMETICKS:
                 value = (double)*vars->val.integer;
+                break;
+            case ASN_TIMETICKS:
+                value = (double)*vars->val.integer / 100.0; //TODO: should I treat timeticks differently than numbers? Ask on forum?
                 break;
 
             // if octet string contains number, export it as double (gauge). Fail otherwise
