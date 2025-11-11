@@ -16,6 +16,8 @@ bool HttpOtelClient::sendMetrics(const std::string& otlpJson) {
     curl_easy_setopt(curl, CURLOPT_URL, endpointUrl.c_str());
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, otlpJson.c_str());
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, otlpJson.size());
+    
     CURLcode res = curl_easy_perform(curl);
     if (res != CURLE_OK) {
         std::cerr << "curl easy perform error" << std::endl;

@@ -1,6 +1,6 @@
 CXX := g++
 CXXFLAGS := -std=c++17 -Wall -Wextra -pedantic -g -O0
-LDFLAGS := 
+LDFLAGS := -lcurl -lnetsnmp
 
 SRC_DIR := src
 INCLUDE_DIR := include

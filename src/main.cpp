@@ -28,14 +28,14 @@ int main() {
 
     SnmpClient client(target, community);
     SnmpResponseToOtlpConverter converter;
-    HttpOtelClient otelClient("http://localhost:4318/v1/metrics");
+    HttpOtelClient otelClient("http://172.26.16.1:4318/v1/metrics");
 
     int counter = 0;
     while (running) { 
 
         std::cout << "Loop #" << counter << "\n";
         netsnmp_pdu * responsePdu = client.snmpGet(oids);
-        std::string otlpJson = converter.toOtlpJson(responsePdu);
+        std::string otlpJson = converter.toOtlpJson(responsePdu, target);
         bool success = otelClient.sendMetrics(otlpJson);
         if (success) {
             std::cout << "Metrics sent successfully.\n";

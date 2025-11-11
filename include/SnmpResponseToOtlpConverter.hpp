@@ -7,6 +7,6 @@
 
 class SnmpResponseToOtlpConverter {
 public:
-    std::string toOtlpJson(netsnmp_pdu* responsePdu
-    );
+    std::string toOtlpJson(netsnmp_pdu* responsePdu, const std::string& agentIp);
+
 };
