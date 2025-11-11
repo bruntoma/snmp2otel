@@ -9,6 +9,10 @@ SnmpClient::SnmpClient(const std::string& target, const std::string& community) 
     session.version = SNMP_VERSION_2c;
     session.community = (u_char*)strdup(community.c_str());
     session.community_len = community.length();
+
+    snmp_set_save_descriptions(0);
+    snmp_set_mib_warnings(0);
+    netsnmp_ds_set_int(NETSNMP_DS_LIBRARY_ID, NETSNMP_DS_LIB_PRINT_NUMERIC_OIDS, 1);
 }
 
 netsnmp_pdu* SnmpClient::snmpGet(const std::vector<std::string>& oids) {

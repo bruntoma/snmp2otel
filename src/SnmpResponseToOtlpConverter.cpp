@@ -25,7 +25,7 @@ static std::string snmp_type_to_string(u_char type) {
 }
 
 struct MetricInfo {
-    std::string name;
+    std::string oid;
     double value;
     long long timestamp;
 };
@@ -60,8 +60,7 @@ std::vector<MetricInfo> extractSnmpData(netsnmp_pdu* responsePdu)
         char oid_str_buf[256]; 
         snprint_objid(oid_str_buf, sizeof(oid_str_buf), vars->name, vars->name_length);
         std::string oid_str(oid_str_buf);
-        std::string metric_name = "snmp_value_" + oid_str;
-        std::replace(metric_name.begin(), metric_name.end(), '.', '_');
+        oid_str.replace(0, 3, "1"); // replace iso by 1
 
         // process value
         double value = 0.0;
@@ -99,7 +98,7 @@ std::vector<MetricInfo> extractSnmpData(netsnmp_pdu* responsePdu)
         if (!err) 
         {
             infoList.push_back({
-                metric_name,
+                oid_str,
                 value,
                 timestamp
             });
@@ -109,52 +108,68 @@ std::vector<MetricInfo> extractSnmpData(netsnmp_pdu* responsePdu)
     return infoList;
 }
 
-std::string SnmpResponseToOtlpConverter::toOtlpJson(netsnmp_pdu* responsePdu, const std::string& agentIp)
+std::string SnmpResponseToOtlpConverter::toOtlpJson(netsnmp_pdu* responsePdu, const std::string& agentIp, std::unordered_map<std::string, OidMetricMapping>& mappings)
 {
     std::vector<MetricInfo> metrics = extractSnmpData(responsePdu);
    
-   json root_json = {
-    {"resourceMetrics", json::array({
-        {
-            {"resource", {
-                {"attributes", json::array({
+    json root_json = {
+        {"resourceMetrics", json::array({
+            {
+                {"resource", {
+                    {"attributes", json::array({
+                        {
+                            {"key", "service.name"},
+                            {"value", {{"stringValue", "snmp2otel"}}}
+                        },
+                        {
+                            {"key", "snmp.target.address"},
+                            {"value", {{"stringValue", agentIp}}}
+                        }
+                    })}
+                }},
+                {"scopeMetrics", json::array({
                     {
-                        //telemetry source
-                        {"key", "service.name"},
-                        {"value", {{"stringValue", "snmp2otel"}}}
-                    },
-                    {
-                        //agent
-                        {"key", "snmp.target.address"},
-                        {"value", {{"stringValue", agentIp}}}
+                        {"scope", json::object()},
+                        {"metrics", json::array()}
                     }
                 })}
-            }},
-            {"scopeMetrics", json::array({
-                {
-                    {"scope", json::object()},
-                    {"metrics", json::array()}
-                }
-            })}
-        }
-    })}
-};
+            }
+        })}
+    };
 
     json& metrics_array = root_json["resourceMetrics"][0]["scopeMetrics"][0]["metrics"]; // ref to the array with metrics
     for (const auto& info : metrics) {
+        std::cout << "\nResolving metric. OID: " << info.oid << std::endl;
+        std::string metric_name;
+        std::string metric_unit;
+
+        if (auto it = mappings.find(info.oid); it != mappings.end()) {
+            std::cout << "[I] found mapping for OID " << info.oid << ", name: " << it -> second.name << std::endl;
+            metric_name = it->second.name;
+            metric_unit = it->second.unit;
+        } else {
+            std::cout << "[X] No mapping found for OID: " << info.oid << std::endl;
+            metric_name = DEFAULT_METRIC_NAME_PREFIX + info.oid;
+            metric_unit = "";
+        }
+
+        std::replace(metric_name.begin(), metric_name.end(), '.', '_');
+
+        std::cout << "[I] Sending metric with name: " + metric_name << std::endl;
+
         json metric_json = {
-            {"name", info.name}, 
+            {"name", metric_name},
+            {"unit", metric_unit},
             {"gauge", {
-                //todo: use mapping file
-                {"dataPoints", {
+                {"dataPoints", json::array({
                     {
                         {"timeUnixNano", std::to_string(info.timestamp)},
                         {"asDouble", info.value}
                     }
-                }}
+                })}
             }}
         };
-        
+
         metrics_array.push_back(metric_json);
     }
     return root_json.dump(0);
