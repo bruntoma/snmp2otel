@@ -14,9 +14,9 @@ public:
     ArgumentParser() {
         target = "10.0.1.138";
         community = "public";
-        oidFile = "oids.txt";
+        oidFile = "";
         mappingFile = "";
-        otelEndpoint = "http://172.26.16.1:4318/v1/metrics";
+        otelEndpoint = "";
         port = 161;
         timeout = 1000; 
         interval = 10;  

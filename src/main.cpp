@@ -27,22 +27,12 @@ int main(int argc, char* argv[]) {
             return static_cast<int>(ExitCode::INVALID_ARGS);
         }
 
-        std::string target = argParser.target;
-        std::string community = argParser.community;
-        std::string oidFile = argParser.oidFile;
-        std::string mappingFile = argParser.mappingFile;
-        std::string otelEndpoint = argParser.otelEndpoint;
-        int port = argParser.port;
-        int timeout = argParser.timeout;
-        int interval = argParser.interval;
-        int retries = argParser.retries;
-        bool verbose = argParser.verbose;
-        g_verbose = verbose;
+        g_verbose = argParser.verbose;
 
         // Parse files
         std::vector<std::string> oids;
         try {
-            oids = loadOidList(oidFile);
+            oids = loadOidList(argParser.oidFile);
             log("LOADED OIDS");
         } catch (const std::exception& e) {
             logError(std::string("Failed to load OID file: ") + e.what());
@@ -55,9 +45,9 @@ int main(int argc, char* argv[]) {
         }
         log("_____________________________________________");
         std::unordered_map<std::string, OidMetricMapping> mappings;
-        if (!mappingFile.empty()) {
+        if (!argParser.mappingFile.empty()) {
             try {
-                mappings = loadMapping(mappingFile);
+                mappings = loadMapping(argParser.mappingFile);
             } catch (const std::exception& e) {
                 logError(std::string("Invalid mapping file: ") + e.what());
                 return static_cast<int>(ExitCode::INVALID_MAPPING_FILE);
@@ -77,9 +67,9 @@ int main(int argc, char* argv[]) {
         std::signal(SIGINT, handle_signal);
         std::signal(SIGTERM, handle_signal);
 
-        SnmpClient client(target, community, port);
+        SnmpClient client(argParser.target, argParser.community, argParser.port, argParser.timeout);
         SnmpResponseToOtlpConverter converter;
-        HttpOtelClient otelClient(otelEndpoint);
+        HttpOtelClient otelClient(argParser.otelEndpoint);
 
         int counter = 0;
         while (running) { 
@@ -90,16 +80,15 @@ int main(int argc, char* argv[]) {
                 logError("SNMP request failed, retry scheduled");
                 // respect interval and continue
                 if (running)
-                    std::this_thread::sleep_for(std::chrono::seconds(interval));
+                    std::this_thread::sleep_for(std::chrono::seconds(argParser.interval));
                 counter++;
                 continue;
             }
-            std::string otlpJson = converter.toOtlpJson(responsePdu, target, mappings);
-
+            std::string otlpJson = converter.toOtlpJson(responsePdu, argParser.target, mappings);
             int timeoutRetryCounter = 1;
             bool success = false;
             do { 
-                success = otelClient.sendMetrics(otlpJson, timeout);
+                success = otelClient.sendMetrics(otlpJson, argParser.timeout);
             
                 if (success) {
                     log("Metrics sent successfully.");
@@ -109,11 +98,11 @@ int main(int argc, char* argv[]) {
                     timeoutRetryCounter++;
                 }
             }
-            while(!success && timeoutRetryCounter <= retries && running);
+            while(!success && timeoutRetryCounter <= argParser.retries && running);
 
 
             if (running)
-                std::this_thread::sleep_for(std::chrono::seconds(interval));
+                std::this_thread::sleep_for(std::chrono::seconds(argParser.interval));
             counter++;
 
             log("____________________________________________");

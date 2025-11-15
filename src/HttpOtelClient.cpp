@@ -2,6 +2,9 @@
 #include <curl/curl.h>
 #include <iostream>
 #include "Config.hpp"
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
 
 
 HttpOtelClient::HttpOtelClient(const std::string& endpointUrl)
@@ -15,12 +18,17 @@ size_t write_data(void *buffer, size_t size, size_t nmemb, void *userp)
    return size * nmemb;
 }
 
-bool HttpOtelClient::sendMetrics(const std::string& otlpJson, int timeout) {
+
+
+bool HttpOtelClient::sendMetrics(const std::string& otlpJson, int timeout ) {
+    (void)timeout; //maybe gonna use this later
+
     CURL* curl = curl_easy_init();
     if (!curl) {
         logError("Failed to initialize curl\n");
         return false;
     }
+
     struct curl_slist* headers = nullptr;
     headers = curl_slist_append(headers, "Content-Type: application/json");
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
@@ -28,7 +36,9 @@ bool HttpOtelClient::sendMetrics(const std::string& otlpJson, int timeout) {
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, otlpJson.c_str());
     curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, otlpJson.size());
-    curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, timeout);
+    curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
+    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 0L);
+    curl_easy_setopt(curl, CURLOPT_TCP_KEEPALIVE, 0L); 
     
     CURLcode res = curl_easy_perform(curl);
     if (res != CURLE_OK) {

@@ -7,7 +7,7 @@
 
 class SnmpClient {
 public:
-    SnmpClient(const std::string& target, const std::string& community, int port);
+    SnmpClient(const std::string& target, const std::string& community, int port, int timeout);
     netsnmp_pdu* snmpGet(const std::vector<std::string>& oids);
 
     ~SnmpClient() {
@@ -21,4 +21,5 @@ private:
     std::string community;
     netsnmp_session session;
     int port;
+    int timeout;
 };
