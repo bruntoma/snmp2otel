@@ -12,7 +12,7 @@ class ArgumentParser {
 public:
 
     ArgumentParser() {
-        target = "10.0.1.138";
+        target = "";
         community = "public";
         oidFile = "";
         mappingFile = "";

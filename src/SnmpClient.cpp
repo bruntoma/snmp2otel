@@ -9,15 +9,20 @@ SnmpClient::SnmpClient(const std::string& target, const std::string& community, 
     session.version = SNMP_VERSION_2c;
     session.community = (u_char*)strdup(community.c_str());
     session.community_len = (int)community.length();
-    session.timeout = timeout;
-    session.retries = retries;
+    session.timeout = timeout * 1000000L;
+    session.retries = 0;
 
     snmp_set_save_descriptions(0);
     snmp_set_mib_warnings(0);
     netsnmp_ds_set_int(NETSNMP_DS_LIBRARY_ID, NETSNMP_DS_LIB_PRINT_NUMERIC_OIDS, 1);
 }
 
-netsnmp_pdu* SnmpClient::snmpGet(const std::vector<std::string>& oids) {
+netsnmp_pdu* SnmpClient::snmpGet(const std::vector<std::string>& oids, int retryIndex) {
+    if (retryIndex >= retries)
+        return nullptr;
+    else if (retryIndex > 0)
+        log("Retrying SNMP GET request, attempt #" + std::to_string(retryIndex + 1));
+
     netsnmp_pdu* pdu = snmp_pdu_create(SNMP_MSG_GET);
     for (const auto& oidStr : oids) {
         oid anOID[MAX_OID_LEN];
@@ -33,15 +38,20 @@ netsnmp_pdu* SnmpClient::snmpGet(const std::vector<std::string>& oids) {
     netsnmp_session* ss = snmp_open(&session);
     if (!ss) {
         logError(std::string("Failed to open SNMP session to ") + target);
-        return nullptr;
     }
 
     int stat = snmp_synch_response(ss, pdu, &responsePdu);
     if (stat != STAT_SUCCESS || !responsePdu) {
         logError("SNMP GET request failed (no response).");
         snmp_close(ss);
-        return nullptr;
     }
+
+    if (!responsePdu) {
+        snmp_close(ss);
+        return snmpGet(oids, retryIndex + 1);
+    }
+
+    log("SNMP GET request successful.");
 
     snmp_close(ss);
     return responsePdu;
