@@ -11,11 +11,20 @@ public:
     netsnmp_pdu* snmpGet(const std::vector<std::string>& oids);
 
     ~SnmpClient() {
-    if (session.peername != nullptr) {
-        free(session.peername); 
-        session.peername = nullptr;
+        std::cout << "Snmp client destructor" << std::endl;
+        if (session.peername != nullptr) {
+            free(session.peername); 
+            session.peername = nullptr;
+        }
+
+        if (session.community != nullptr) {
+            free(session.community); 
+            session.community = nullptr;
+        }
+
+        snmp_close_sessions();
+        snmp_shutdown("snmpapp");
     }
-}
 private:
     std::string target;
     std::string community;

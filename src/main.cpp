@@ -106,6 +106,7 @@ int main(int argc, char* argv[]) {
             counter++;
 
             log("____________________________________________");
+            snmp_free_pdu(responsePdu);
         }
 
         log("Main loop exited cleanly.");
