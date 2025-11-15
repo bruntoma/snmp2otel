@@ -97,14 +97,15 @@ public:
     void printUsage() const {
         log("Usage:");
         log("  snmp2otel -t target [-C community] -o oids_file -e endpoint [-i interval] [-r retries] [-T timeout] [-p port] [-v]");
-        log("  -t target — IP or DNS name of SNMP agent.");
-        log("  -C community — SNMP v2c community string. Default: public.");
-        log("  -o oids_file — file with list of OIDs to query.");
-        log("  -e endpoint — OTEL endpoint URL (OTLP/HTTP JSON).");
-        log("  -i interval — polling period in seconds (>0). Default: 10.");
-        log("  -r retries — retransmissions on timeout. Default: 2.");
-        log("  -T timeout — SNMP timeout in ms. Default: 1000.");
-        log("  -p port — UDP port. Default: 161.");
+        log("  -t target — SNMP agent.");
+        log("  -C community — community string (public)");
+        log("  -o oids_file — file with list of OIDs");
+        log("  -e endpoint — OTEL (OTLP/HTTP) endpoint URL");
+        log("  -i interval — polling interval in seconds (10)");
+        log("  -r retries — retransmissions on timeout (2)");
+        log("  -T timeout — SNMP timeout in ms (1000)");
+        log("  -m mappings — JSON file with SNMP to OTEL metric mappings");
+        log("  -p port — UDP port (161).");
         log("  -v — verbose mode.");
     }
 
