@@ -53,6 +53,11 @@ std::vector<MetricInfo> extractSnmpData(netsnmp_pdu* responsePdu)
     std::vector<MetricInfo> infoList;
     long long timestamp = get_time();
     
+    if (responsePdu == nullptr) {
+        logError("SNMP response PDU is null");
+        return infoList;
+    }
+
     for (netsnmp_variable_list * vars = responsePdu->variables; vars != NULL; vars = vars->next_variable) 
     { 
         bool err = false;
@@ -83,7 +88,7 @@ std::vector<MetricInfo> extractSnmpData(netsnmp_pdu* responsePdu)
                 std::string oct_str((char *)vars->val.string, vars->val_len);
                 if (!str_to_double(oct_str, value)) // if it fails, err
                 {
-                    std::cerr << "OID " + oid_str + ": OCTET STRING '" + oct_str + "' does not contain number" << std::endl;
+                    logError(std::string("OID ") + oid_str + ": OCTET STRING '" + oct_str + "' does not contain number");
                     err = true;
                 }
                 break;
@@ -91,7 +96,7 @@ std::vector<MetricInfo> extractSnmpData(netsnmp_pdu* responsePdu)
 
             // other types not supported
             default:
-                logError("OID " + oid_str + ": Unsupported type: " + snmp_type_to_string(vars->type));
+                logError("OID " + oid_str + ": Unsupported ASN type: " + snmp_type_to_string(vars->type) + "(" + std::to_string(vars->type) +")");
                 err = true;
                 break;
         }

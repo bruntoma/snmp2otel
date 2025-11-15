@@ -8,7 +8,7 @@ SnmpClient::SnmpClient(const std::string& target, const std::string& community, 
     session.peername = strdup((target + ":" + std::to_string(port)).c_str());
     session.version = SNMP_VERSION_2c;
     session.community = (u_char*)strdup(community.c_str());
-    session.community_len = community.length();
+    session.community_len = (int)community.length();
 
     snmp_set_save_descriptions(0);
     snmp_set_mib_warnings(0);
@@ -21,6 +21,7 @@ netsnmp_pdu* SnmpClient::snmpGet(const std::vector<std::string>& oids) {
         oid anOID[MAX_OID_LEN];
         size_t anOID_len = MAX_OID_LEN;
         if (!snmp_parse_oid(oidStr.c_str(), anOID, &anOID_len)) {
+            logError(std::string("Invalid OID skipped: ") + oidStr);
             continue;
         }
         snmp_add_null_var(pdu, anOID, anOID_len);
@@ -29,6 +30,7 @@ netsnmp_pdu* SnmpClient::snmpGet(const std::vector<std::string>& oids) {
     netsnmp_pdu* responsePdu = nullptr;
     netsnmp_session* ss = snmp_open(&session);
     if (!ss) {
+        logError(std::string("Failed to open SNMP session to ") + target);
         return nullptr;
     }
 

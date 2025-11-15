@@ -25,13 +25,18 @@ public:
     }
 
     bool parse( int argc, char** argv) {
-        const char* const short_options = "t:C:o:m:e:i:r:T:p:v";
-        
-        int opt;
+        for (int i = 1; i < argc; i++) {
+            if (std::string(argv[i]) == "-v") {
+                g_verbose = true;
+                verbose = true;
+            }
+        }
 
+        const char* const short_options = "+t:C:o:m:e:i:r:T:p:v";
         optind = 1; 
         opterr = 0;
-
+        
+        int opt;
         while ((opt = getopt(argc, argv, short_options)) != -1) {
             try {
                 switch (opt) {
@@ -60,16 +65,11 @@ public:
                         verbose = true; 
                         break;
                     case '?':
-                        if (optopt) {
-                            logError("Argument -" + std::to_string((char)optopt));
-                        } else {
-                            logError("Unknown argument");
-                        }
-                        return false;
-                    default: return false;
+                        throw std::runtime_error(optopt ? std::string("Unknown or invalid option -") + (char)optopt : "Unknown argument");
                 }
             } catch (const std::exception& e) {
-                logError("Invalid argument -" + std::to_string((char)opt) + ". "  + e.what());
+                logError(std::string("Invalid argument -") + (optopt ? (char)optopt : (char)opt) + ". " + e.what());            
+                printUsage();
                 return false;
             }
         }
@@ -77,18 +77,35 @@ public:
         //required params
         if (target.empty()) {
             logError("missing -t (target).");
+            printUsage();
             return false;
         }
         if (oidFile.empty()) {
             logError("mising -o (oids_file).");
+            printUsage();
             return false;
         }
 
         if (otelEndpoint.empty()) {
             logError("missing -e (OTEL endpoint).");
+            printUsage();
             return false;
         }
         return true;
+    }
+
+    void printUsage() const {
+        log("Usage:");
+        log("  snmp2otel -t target [-C community] -o oids_file -e endpoint [-i interval] [-r retries] [-T timeout] [-p port] [-v]");
+        log("  -t target — IP or DNS name of SNMP agent.");
+        log("  -C community — SNMP v2c community string. Default: public.");
+        log("  -o oids_file — file with list of OIDs to query.");
+        log("  -e endpoint — OTEL endpoint URL (OTLP/HTTP JSON).");
+        log("  -i interval — polling period in seconds (>0). Default: 10.");
+        log("  -r retries — retransmissions on timeout. Default: 2.");
+        log("  -T timeout — SNMP timeout in ms. Default: 1000.");
+        log("  -p port — UDP port. Default: 161.");
+        log("  -v — verbose mode.");
     }
 
     std::string target;
