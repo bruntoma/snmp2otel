@@ -2,7 +2,7 @@
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 
-SnmpClient::SnmpClient(const std::string& target, const std::string& community, int port, int timeout) : target(target), community(community), port(port), timeout(timeout) {
+SnmpClient::SnmpClient(const std::string& target, const std::string& community, int port, int timeout, int retries) : target(target), community(community), port(port), timeout(timeout), retries(retries) {
     init_snmp("snmpapp");
     snmp_sess_init(&session);
     session.peername = strdup((target + ":" + std::to_string(port)).c_str());
@@ -10,7 +10,7 @@ SnmpClient::SnmpClient(const std::string& target, const std::string& community, 
     session.community = (u_char*)strdup(community.c_str());
     session.community_len = (int)community.length();
     session.timeout = timeout;
-    session.retries = 0;
+    session.retries = retries;
 
     snmp_set_save_descriptions(0);
     snmp_set_mib_warnings(0);
@@ -36,8 +36,9 @@ netsnmp_pdu* SnmpClient::snmpGet(const std::vector<std::string>& oids) {
         return nullptr;
     }
 
-    int status = snmp_synch_response(ss, pdu, &responsePdu);
-    if (status != STAT_SUCCESS || !responsePdu) {
+    int stat = snmp_synch_response(ss, pdu, &responsePdu);
+    if (stat != STAT_SUCCESS || !responsePdu) {
+        logError("SNMP GET request failed (no response).");
         snmp_close(ss);
         return nullptr;
     }

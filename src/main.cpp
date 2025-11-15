@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
 
         g_verbose = argParser.verbose;
 
-        // Parse files
+        // parse files
         std::vector<std::string> oids;
         try {
             oids = loadOidList(argParser.oidFile);
@@ -62,51 +62,64 @@ int main(int argc, char* argv[]) {
 
         log("____________________________________________");
 
-
-
         std::signal(SIGINT, handle_signal);
         std::signal(SIGTERM, handle_signal);
 
-        SnmpClient client(argParser.target, argParser.community, argParser.port, argParser.timeout);
+        SnmpClient client(argParser.target, argParser.community, argParser.port, argParser.timeout, argParser.retries);
         SnmpResponseToOtlpConverter converter;
         HttpOtelClient otelClient(argParser.otelEndpoint);
 
         int counter = 0;
         while (running) { 
-
             log("\nLoop #" + std::to_string(counter));
+            
+            // SNMP GET
+            log("--- Fetching SNMP data from " + argParser.target + " ...");
             netsnmp_pdu * responsePdu = client.snmpGet(oids);
-            if (!responsePdu) {
-                logError("SNMP request failed, retry scheduled");
-                // respect interval and continue
-                if (running)
+            if (responsePdu == nullptr) {
+                if (running) {
                     std::this_thread::sleep_for(std::chrono::seconds(argParser.interval));
+                }
                 counter++;
                 continue;
             }
+            log("SNMP data fetched successfully.");
+
+            // convert to OTLP
+            log("\n--- Converting SNMP response to OTLP JSON ...");
             std::string otlpJson = converter.toOtlpJson(responsePdu, argParser.target, mappings);
+            snmp_free_pdu(responsePdu);
+
+            // send metrics with retries
+            log("\n--- Sending metrics to OTEL endpoint " + argParser.otelEndpoint + " ...");
             int timeoutRetryCounter = 1;
             bool success = false;
-            do { 
+            
+            while (!success && timeoutRetryCounter <= argParser.retries && running) {
                 success = otelClient.sendMetrics(otlpJson, argParser.timeout);
             
                 if (success) {
                     log("Metrics sent successfully.");
-                    timeoutRetryCounter = 1;
                 } else {
-                    logError("Failed to send metrics. Retry #" + std::to_string(timeoutRetryCounter) + "\n");
+                    if (running) {
+                        logError("Failed to send metrics. Retry #" + std::to_string(timeoutRetryCounter));
+                    }
                     timeoutRetryCounter++;
+                    
+                    // Short delay between retries unless shutting down
+                    if (!success && timeoutRetryCounter <= argParser.retries && running) {
+                        std::this_thread::sleep_for(std::chrono::seconds(1));
+                    }
                 }
             }
-            while(!success && timeoutRetryCounter <= argParser.retries && running);
 
-
-            if (running)
+            // sleep between scans
+            if (running) {
                 std::this_thread::sleep_for(std::chrono::seconds(argParser.interval));
+            }
             counter++;
 
             log("____________________________________________");
-            snmp_free_pdu(responsePdu);
         }
 
         log("Main loop exited cleanly.");

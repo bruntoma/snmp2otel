@@ -20,7 +20,7 @@ public:
         port = 161;
         timeout = 1000; 
         interval = 10;  
-        retries = 3; 
+        retries = 2; 
         verbose = false;
     }
 
