@@ -41,3 +41,7 @@
 *.dwo
 
 .vscode/
+
+xbrunat00.tar
+test.sh
+snmp2otel

@@ -7,7 +7,7 @@ INCLUDE_DIR := include
 BUILD_DIR := build
 BIN_DIR := bin
 
-TARGET := snpm2otel
+TARGET := snmp2otel
 TEST_TARGET := $(BIN_DIR)/tests
 
 SOURCES := $(wildcard $(SRC_DIR)/*.cpp)
