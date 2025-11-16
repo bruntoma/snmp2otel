@@ -3,6 +3,6 @@
 * Popis:
 > Snmp2otel je jednoduchý program, který umožňuje v pravidelných intervalech zjišťovat informace od zařízení přes SNMP (GET) a exportovat naměřené hodnoty jako metriky do OTEL (OTLP/HTTP). Názvy metrik je možné specifikovat v mapping souboru (cesta k souboru se programu předává pomocí přepínače `-m "cesta k souboru"`). Pokud uživatel tuto možnost nevyužije, nebo se v souboru nenachází potřebné informace pro dané OID, program použije název ve formátu snmp_oid. 
 
-* Rozíření:
+* Rozšíření:
   * Možnost zadat mapping soubor přes přepínač `-m`
   * Podpora TimeTicks

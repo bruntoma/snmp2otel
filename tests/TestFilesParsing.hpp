@@ -36,10 +36,6 @@ public:
             assert_throws([&](){ loadOidList("nonexistent_oids.txt"); }, "nonexistent oid file");
         }
 
-        // invalid oid file (contains nonsense) - missing functionality in loadOidList
-
-        // oid file with one invalid oid (mixed) - same as above, TODO
-
         // valid mapping file
         std::string tmp_map_valid = "test_mappings.json";
         {

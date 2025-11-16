@@ -7,7 +7,7 @@ INCLUDE_DIR := include
 BUILD_DIR := build
 BIN_DIR := bin
 
-TARGET := $(BIN_DIR)/snpm2otel
+TARGET := snpm2otel
 TEST_TARGET := $(BIN_DIR)/tests
 
 SOURCES := $(wildcard $(SRC_DIR)/*.cpp)
@@ -48,6 +48,7 @@ release: clean $(TARGET)
 
 clean:
 	@rm -rf $(BUILD_DIR) $(BIN_DIR)
+	@rm -f $(TARGET)
 
 rebuild: clean all
 
