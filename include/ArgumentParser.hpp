@@ -96,7 +96,7 @@ public:
 
     void printUsage() const {
         log("Usage:");
-        log("  snmp2otel -t target [-C community] -o oids_file -e endpoint [-i interval] [-r retries] [-T timeout] [-p port] [-v]");
+        log("  snmp2otel -t target [-C community] -o oids_file -e endpoint [-i interval] [-r retries] [-T timeout] [-m mappings_file] [-p port] [-v]");
         log("  -t target — SNMP agent.");
         log("  -C community — community string (public)");
         log("  -o oids_file — file with list of OIDs");
