@@ -4,6 +4,8 @@
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 #include "Config.hpp"
+#include <sys/socket.h>
+#include <arpa/inet.h>
 
 class SnmpClient {
 public:
@@ -24,6 +26,13 @@ public:
         snmp_close_sessions();
         snmp_shutdown("snmpapp");
     }
+
+    bool isValidIp(const std::string& address) {
+         struct sockaddr_in sockaddr; 
+    
+         return inet_pton(AF_INET, address.c_str(), &(sockaddr.sin_addr)) != 0;
+    }
+
 private:
     std::string target;
     std::string community;

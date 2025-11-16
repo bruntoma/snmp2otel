@@ -3,6 +3,10 @@
 #include <net-snmp/net-snmp-includes.h>
 
 SnmpClient::SnmpClient(const std::string& target, const std::string& community, int port, int timeout, int retries) : target(target), community(community), port(port), timeout(timeout), retries(retries) {
+    if (!isValidIp(target)) {
+        throw std::runtime_error("Invalid target IP address: " + target);
+    }
+
     init_snmp("snmpapp");
     snmp_sess_init(&session);
     session.peername = strdup((target + ":" + std::to_string(port)).c_str());
@@ -38,21 +42,27 @@ netsnmp_pdu* SnmpClient::snmpGet(const std::vector<std::string>& oids, int retry
     netsnmp_session* ss = snmp_open(&session);
     if (!ss) {
         logError(std::string("Failed to open SNMP session to ") + target);
+        snmp_free_pdu(pdu);
+        return snmpGet(oids, retryIndex + 1);
     }
-
+    
     int stat = snmp_synch_response(ss, pdu, &responsePdu);
-    if (stat != STAT_SUCCESS || !responsePdu) {
+    if (stat != STAT_SUCCESS) {
         logError("SNMP GET request failed (no response).");
+        if (responsePdu) {
+            snmp_free_pdu(responsePdu);
+        }
         snmp_close(ss);
+        return snmpGet(oids, retryIndex + 1);
     }
-
+    
+    snmp_close(ss);
+    
     if (!responsePdu) {
-        snmp_close(ss);
+        logError("SNMP GET request failed (null response).");
         return snmpGet(oids, retryIndex + 1);
     }
 
     log("SNMP GET request successful.");
-
-    snmp_close(ss);
     return responsePdu;
 }
