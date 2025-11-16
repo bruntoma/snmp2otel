@@ -25,12 +25,7 @@ public:
 
         snmp_close_sessions();
         snmp_shutdown("snmpapp");
-    }
-
-    bool isValidIp(const std::string& address) {
-         struct sockaddr_in sockaddr; 
-    
-         return inet_pton(AF_INET, address.c_str(), &(sockaddr.sin_addr)) != 0;
+        
     }
 
 private:

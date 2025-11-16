@@ -3,10 +3,6 @@
 #include <net-snmp/net-snmp-includes.h>
 
 SnmpClient::SnmpClient(const std::string& target, const std::string& community, int port, int timeout, int retries) : target(target), community(community), port(port), timeout(timeout), retries(retries) {
-    if (!isValidIp(target)) {
-        throw std::runtime_error("Invalid target IP address: " + target);
-    }
-
     init_snmp("snmpapp");
     snmp_sess_init(&session);
     session.peername = strdup((target + ":" + std::to_string(port)).c_str());
