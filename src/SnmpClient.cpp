@@ -9,7 +9,7 @@ SnmpClient::SnmpClient(const std::string& target, const std::string& community, 
     session.version = SNMP_VERSION_2c;
     session.community = (u_char*)strdup(community.c_str());
     session.community_len = (int)community.length();
-    session.timeout = timeout * 1000000L;
+    session.timeout = timeout * 1000L;
     session.retries = 0;
 
     snmp_set_save_descriptions(0);
