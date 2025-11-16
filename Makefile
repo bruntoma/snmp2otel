@@ -38,7 +38,7 @@ $(BIN_DIR):
 	@mkdir -p $(BIN_DIR)
 
 run: $(TARGET)
-	@./$(TARGET)
+	@./$(TARGET) --help
 
 debug: CXXFLAGS += -DDEBUG -g3
 debug: $(TARGET)

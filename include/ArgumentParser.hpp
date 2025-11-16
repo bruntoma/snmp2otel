@@ -30,6 +30,13 @@ public:
                 g_verbose = true;
                 verbose = true;
             }
+
+            if (std::string(argv[i]) == "--help" || std::string(argv[i]) == "-h") {
+                g_verbose = true;
+                verbose = true;
+                printUsage();
+                exit(static_cast<int>(ExitCode::OK));
+            }
         }
 
         const char* const short_options = "+t:C:o:m:e:i:r:T:p:v";
@@ -104,7 +111,7 @@ public:
         log("  -i interval — polling interval in seconds (10)");
         log("  -r retries — retransmissions on timeout (2)");
         log("  -T timeout — SNMP timeout in ms (1000)");
-        log("  -m mappings — JSON file with SNMP to OTEL metric mappings");
+        log("  -m mappings_file — JSON file with SNMP to OTEL metric mappings");
         log("  -p port — UDP port (161).");
         log("  -v — verbose mode.");
     }
