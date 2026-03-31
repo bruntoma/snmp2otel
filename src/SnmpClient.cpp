@@ -18,9 +18,9 @@ SnmpClient::SnmpClient(const std::string& target, const std::string& community, 
 }
 
 netsnmp_pdu* SnmpClient::snmpGet(const std::vector<std::string>& oids, int retryIndex) {
-    if (retryIndex >= retries)
+    if (retryIndex > retries)
         return nullptr;
-    else if (retryIndex > 0)
+    else if (retryIndex >= 0)
         log("Retrying SNMP GET request, attempt #" + std::to_string(retryIndex + 1));
 
     netsnmp_pdu* pdu = snmp_pdu_create(SNMP_MSG_GET);
@@ -56,7 +56,7 @@ netsnmp_pdu* SnmpClient::snmpGet(const std::vector<std::string>& oids, int retry
     
     if (!responsePdu) {
         logError("SNMP GET request failed (null response).");
-        return snmpGet(oids, retryIndex + 1);
+        return snmpGet(oids, retryIndex + 1);               
     }
 
     log("SNMP GET request successful.");

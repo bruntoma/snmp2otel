@@ -57,8 +57,8 @@ public:
                         if (interval <= 0) throw std::runtime_error("must be > 0");
                         break;
                     case 'r':
-                        retries = std::stoi(optarg);
-                        if (retries < 0) throw std::runtime_error("must be > 0");
+                        retries = std::stoi(optarg) + 1;
+                        if (retries <= 0) throw std::runtime_error("must be > 0");
                         break;
                     case 'T': 
                         timeout = std::stoi(optarg);
